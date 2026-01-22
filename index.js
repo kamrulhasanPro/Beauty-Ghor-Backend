@@ -2,12 +2,17 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const productsRouter = require("./routes/products.routes");
+const { connectDB } = require("./config/db");
+
 const port = 1000;
 const app = express();
 
 // middleware
 dotenv.config();
+// db connect
+connectDB();
+
 app.use(
   cors({
     origin: ["http://localhost:3000"],
@@ -21,75 +26,12 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// mongodb connect
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-});
-
-client
-  .connect()
-  .then(() => {
-    console.log("MongoDB successfully connected");
-  })
-  .catch((error) => {
-    console.log("MongoDB connect problem", error);
-  });
-
-// database
-const db = client.db("BeautyGhor");
-const productsCollection = db.collection("products");
+// products
+app.use("/api/products", productsRouter);
 
 // main api
 app.listen(port, () => {
   console.log("server is running of", port);
-});
-
-// ------------products---------------
-
-// get all products
-app.get("/products", async (req, res) => {
-  try {
-    const result = await productsCollection.find().toArray();
-    res.json(result);
-  } catch (error) {
-    console.log("Products find problem", error);
-    res.status(500).json({
-      message: "products find problem",
-    });
-  }
-});
-
-// get a specific product
-app.get("/product/:id", async (req, res) => {
-  try {
-    const query = { _id: new ObjectId(req.params.id) };
-    const result = await productsCollection.findOne(query);
-    res.json(result);
-  } catch (error) {
-    console.log("Specific products find problem", error);
-    res.status(500).json({
-      message: "Specific product find problem",
-    });
-  }
-});
-
-// post product
-app.post("/products", async (req, res) => {
-  try {
-    const product = req.body;
-    const result = await productsCollection.insertOne(product);
-    res.json(result);
-  } catch (error) {
-    console.log("Product post problem", error);
-    res.status(500).json({
-      message: "Product post problem",
-    });
-  }
 });
 
 // basic
